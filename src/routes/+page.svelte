@@ -38,16 +38,6 @@
 			<h1 class="text-3xl font-bold text-gray-900">Panoramica</h1>
 			<p class="text-gray-600 mt-1">Benvenuto nel tuo gestionale studio</p>
 		</div>
-		<div class="flex gap-3">
-			<Button href="/pazienti/nuovo" variant="outline">
-				<Plus class="w-4 h-4 mr-2" />
-				Nuovo Paziente
-			</Button>
-			<Button href="/fatture/nuova">
-				<Plus class="w-4 h-4 mr-2" />
-				Nuova Fattura
-			</Button>
-		</div>
 	</div>
 
 
