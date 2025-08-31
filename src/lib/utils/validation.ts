@@ -75,6 +75,12 @@ export const patientSchema = z.object({
     .boolean()
     .refine(val => val === true, 'Il consenso al trattamento dati è obbligatorio'),
   dataConsenso: z.string().optional(),
+  // Pricing preferences for invoices
+  prezziPreferiti: z.object({
+    importo: z.number().positive().optional(),
+    aliquotaIva: z.number().min(0).max(100).optional(),
+    prezzoIncludeIva: z.boolean().optional(),
+  }).optional(),
 });
 
 // Schema per Fattura/Parcella
@@ -116,7 +122,7 @@ export const invoiceSchema = z.object({
   ]).optional().default('bonifico'),
 
   // Stato fattura
-  stato: z.enum(['bozza', 'emessa', 'pagata', 'annullata']).optional().default('emessa'),
+  stato: z.enum(['emessa', 'pagata', 'annullata']).optional().default('emessa'),
   dataPagamento: z.string().optional(),
 
   // Regime fiscale
@@ -220,5 +226,5 @@ export type Psychologist = z.infer<typeof psychologistSchema> & {
 export type Invoice = z.infer<typeof invoiceSchema> & {
   id?: number;
   dataCreazione?: string;
-  stato?: 'bozza' | 'emessa' | 'pagata' | 'annullata';
+  stato?: 'emessa' | 'pagata' | 'annullata';
 };

@@ -162,7 +162,7 @@
 				csv = 'Numero,Data,Paziente,Psicologo,Importo,IVA,Totale,Stato\n';
 				invoicesData.forEach(f => {
 					const totale = f.importo * (1 + f.aliquotaIva / 100);
-					csv += `"${f.numeroFattura}","${f.data}","${f.paziente?.nome} ${f.paziente?.cognome}","${f.psicologo?.nome} ${f.psicologo?.cognome}","${f.importo}","${f.aliquotaIva}%","${totale}","${f.stato || 'bozza'}"\n`;
+					csv += `"${f.numeroFattura}","${f.data}","${f.paziente?.nome} ${f.paziente?.cognome}","${f.psicologo?.nome} ${f.psicologo?.cognome}","${f.importo}","${f.aliquotaIva}%","${totale}","${f.stato || 'emessa'}"\n`;
 				});
 				filename = 'fatture.csv';
 				break;

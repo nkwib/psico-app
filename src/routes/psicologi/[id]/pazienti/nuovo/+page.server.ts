@@ -1,8 +1,11 @@
 import { superValidate } from "sveltekit-superforms/server";
 import { patientSchema } from "$lib/utils/validation";
 import { zod } from "sveltekit-superforms/adapters";
+import type { PageServerLoad } from "./$types";
 
-export async function load() {
+export const load: PageServerLoad = async ({ params }) => {
+  const psychologistId = params.id;
+  
   // Initialize with default values
   const defaultData = {
     nome: '',
@@ -24,5 +27,6 @@ export async function load() {
   
   return {
     form,
+    psychologistId
   };
-}
+};

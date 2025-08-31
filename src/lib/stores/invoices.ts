@@ -24,7 +24,7 @@ function createInvoiceStore() {
           ...invoice,
           id: Date.now(),
           dataCreazione: new Date().toISOString(),
-          stato: invoice.stato || 'bozza'
+          stato: invoice.stato || 'emessa'
         }];
         if (browser)
           localStorage.setItem("invoices", JSON.stringify(newInvoices));
@@ -44,7 +44,7 @@ function createInvoiceStore() {
         if (browser) localStorage.setItem("invoices", JSON.stringify(updated));
         return updated;
       }),
-    updateStatus: (id: number, stato: 'bozza' | 'emessa' | 'pagata') =>
+    updateStatus: (id: number, stato: 'emessa' | 'pagata' | 'annullata') =>
       update((invoices) => {
         const updated = invoices.map((i) =>
           i.id === id ? { ...i, stato } : i

@@ -72,8 +72,8 @@
 						name="nome"
 						bind:value={$form.nome}
 						{...$constraints.nome}
-						aria-invalid={$errors.nome ? 'true' : undefined}
-						class={$errors.nome ? 'border-red-500' : ''}
+						aria-invalid={$errors.nome && $tainted?.nome ? 'true' : undefined}
+						class={$errors.nome && $tainted?.nome ? 'border-red-500' : ''}
 					/>
 					{#if $errors.nome && $tainted?.nome}
 						<p class="text-sm text-red-500 mt-1">{$errors.nome}</p>
@@ -87,8 +87,8 @@
 						name="cognome"
 						bind:value={$form.cognome}
 						{...$constraints.cognome}
-						aria-invalid={$errors.cognome ? 'true' : undefined}
-						class={$errors.cognome ? 'border-red-500' : ''}
+						aria-invalid={$errors.cognome && $tainted?.cognome ? 'true' : undefined}
+						class={$errors.cognome && $tainted?.cognome ? 'border-red-500' : ''}
 					/>
 					{#if $errors.cognome && $tainted?.cognome}
 						<p class="text-sm text-red-500 mt-1">{$errors.cognome}</p>
@@ -103,8 +103,8 @@
 						bind:value={$form.codiceFiscale}
 						placeholder="RSSMRA85M01H501Z"
 						{...$constraints.codiceFiscale}
-						aria-invalid={$errors.codiceFiscale ? 'true' : undefined}
-						class={$errors.codiceFiscale ? 'border-red-500' : ''}
+						aria-invalid={$errors.codiceFiscale && $tainted?.codiceFiscale ? 'true' : undefined}
+						class={$errors.codiceFiscale && $tainted?.codiceFiscale ? 'border-red-500' : ''}
 						style="text-transform: uppercase"
 					/>
 					{#if $errors.codiceFiscale && $tainted?.codiceFiscale}
@@ -120,8 +120,8 @@
 						bind:value={$form.numeroOrdine}
 						placeholder="es. 12345"
 						{...$constraints.numeroOrdine}
-						aria-invalid={$errors.numeroOrdine ? 'true' : undefined}
-						class={$errors.numeroOrdine ? 'border-red-500' : ''}
+						aria-invalid={$errors.numeroOrdine && $tainted?.numeroOrdine ? 'true' : undefined}
+						class={$errors.numeroOrdine && $tainted?.numeroOrdine ? 'border-red-500' : ''}
 					/>
 					{#if $errors.numeroOrdine && $tainted?.numeroOrdine}
 						<p class="text-sm text-red-500 mt-1">{$errors.numeroOrdine}</p>
@@ -144,8 +144,8 @@
 						bind:value={$form.partitaIva}
 						placeholder="12345678901"
 						{...$constraints.partitaIva}
-						aria-invalid={$errors.partitaIva ? 'true' : undefined}
-						class={$errors.partitaIva ? 'border-red-500' : ''}
+						aria-invalid={$errors.partitaIva && $tainted?.partitaIva ? 'true' : undefined}
+						class={$errors.partitaIva && $tainted?.partitaIva ? 'border-red-500' : ''}
 					/>
 					{#if $errors.partitaIva && $tainted?.partitaIva}
 						<p class="text-sm text-red-500 mt-1">{$errors.partitaIva}</p>
@@ -160,8 +160,8 @@
 						bind:value={$form.telefono}
 						placeholder="+39 xxx xxx xxxx"
 						{...$constraints.telefono}
-						aria-invalid={$errors.telefono ? 'true' : undefined}
-						class={$errors.telefono ? 'border-red-500' : ''}
+						aria-invalid={$errors.telefono && $tainted?.telefono ? 'true' : undefined}
+						class={$errors.telefono && $tainted?.telefono ? 'border-red-500' : ''}
 					/>
 					{#if $errors.telefono && $tainted?.telefono}
 						<p class="text-sm text-red-500 mt-1">{$errors.telefono}</p>
@@ -177,8 +177,8 @@
 						bind:value={$form.email}
 						placeholder="psicologo@esempio.com"
 						{...$constraints.email}
-						aria-invalid={$errors.email ? 'true' : undefined}
-						class={$errors.email ? 'border-red-500' : ''}
+						aria-invalid={$errors.email && $tainted?.email ? 'true' : undefined}
+						class={$errors.email && $tainted?.email ? 'border-red-500' : ''}
 					/>
 					{#if $errors.email && $tainted?.email}
 						<p class="text-sm text-red-500 mt-1">{$errors.email}</p>
@@ -193,8 +193,8 @@
 						bind:value={$form.indirizzo}
 						placeholder="Via Roma 1, 00100 Roma"
 						{...$constraints.indirizzo}
-						aria-invalid={$errors.indirizzo ? 'true' : undefined}
-						class={$errors.indirizzo ? 'border-red-500' : ''}
+						aria-invalid={$errors.indirizzo && $tainted?.indirizzo ? 'true' : undefined}
+						class={$errors.indirizzo && $tainted?.indirizzo ? 'border-red-500' : ''}
 					/>
 					{#if $errors.indirizzo && $tainted?.indirizzo}
 						<p class="text-sm text-red-500 mt-1">{$errors.indirizzo}</p>

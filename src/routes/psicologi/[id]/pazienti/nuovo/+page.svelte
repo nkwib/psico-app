@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { get } from 'svelte/store';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { patientSchema } from '$lib/utils/validation';
 	import { patients } from '$lib/stores/patients';
+	import { psychologists } from '$lib/stores/psychologists';
+	import { invoices } from '$lib/stores/invoices';
 	import { goto } from '$app/navigation';
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { toast } from 'svelte-sonner';
@@ -13,9 +16,20 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
-	import { Alert, AlertDescription } from '$lib/components/ui/alert';
+	import { Badge } from '$lib/components/ui/badge';
+	import { User } from 'lucide-svelte';
 
 	let { data } = $props();
+	
+	let psychologist = $state<any>(null);
+	
+	$effect(() => {
+		const unsubPsychologists = psychologists.subscribe(psychs => {
+			psychologist = psychs.find(p => p.id === Number(data.psychologistId));
+		});
+		
+		return () => unsubPsychologists();
+	});
 
 	const { form, errors, enhance, constraints, submitting, tainted } = superForm(data.form, {
 		validators: zod(patientSchema),
@@ -23,10 +37,8 @@
 		resetForm: false,
 		validationMethod: 'onblur',
 		onSubmit: async ({ formData, cancel }) => {
-			// Gestisce l'invio del form lato client per localStorage
-			cancel(); // Previene l'invio al server
+			cancel();
 
-			// With dataType: 'json', form data is already properly structured
 			const datiPaziente = {
 				nome: $form.nome,
 				cognome: $form.cognome,
@@ -39,10 +51,41 @@
 				consensoTrattamentoDati: $form.consensoTrattamentoDati
 			};
 
+			// Add patient
 			patients.add(datiPaziente);
-			toast.success(`Paziente ${datiPaziente.nome} ${datiPaziente.cognome} creato con successo`);
+			
+			// Create first invoice to establish relationship with this psychologist
+			// This ensures the patient appears in this psychologist's patient list
+			const newPatientId = Date.now(); // This will be the patient's ID
+			const firstInvoice = {
+				idPaziente: newPatientId.toString(),
+				idPsicologo: data.psychologistId,
+				numeroFattura: invoices.getNextInvoiceNumber(),
+				data: new Date().toISOString().split('T')[0],
+				descrizione: 'Prima consulenza',
+				importo: 0, // Can be 0 for initial registration
+				aliquotaIva: 0,
+				stato: 'emessa' as const,
+				paziente: { ...datiPaziente, id: newPatientId },
+				psicologo: psychologist,
+				// Required fields
+				dettaglioSedute: false,
+				numeroSedute: 0,
+				tipoPrestazione: 'sostegno_psicologico' as const,
+				speseAnticipate: 0,
+				mostraPrivacy: false,
+				modalitaPagamento: 'bonifico' as const,
+				regimeFiscale: 'forfettario' as const,
+				marcaDaBollo: false,
+				importoMarcaDaBollo: 2.00,
+				note: 'Registrazione iniziale paziente'
+			};
+			
+			invoices.add(firstInvoice);
+			
+			toast.success(`Paziente ${datiPaziente.nome} ${datiPaziente.cognome} aggiunto a Dr. ${psychologist?.nome} ${psychologist?.cognome}`);
 			setTimeout(() => {
-				goto('/pazienti');
+				goto(`/psicologi/${data.psychologistId}/pazienti`);
 			}, 100);
 		},
 		onError: ({ result }) => {
@@ -52,18 +95,28 @@
 	});
 </script>
 
-<div class="container mx-auto py-8 max-w-4xl">
-	<div class="mb-6">
-		<h1 class="text-3xl font-bold text-gray-900">Nuovo Paziente</h1>
-		<p class="text-gray-600 mt-2">Compila le informazioni complete del paziente per la cartella clinica</p>
+<div class="space-y-6">
+	<!-- Header with Context -->
+	<div class="flex justify-between items-center">
+		<div>
+			<h3 class="text-lg font-semibold">Nuovo Paziente</h3>
+			<p class="text-sm text-gray-600 mt-1">
+				Registra un nuovo paziente per {psychologist ? `Dr. ${psychologist.nome} ${psychologist.cognome}` : 'questo psicologo'}
+			</p>
+		</div>
+		{#if psychologist}
+			<Badge variant="secondary" class="gap-1">
+				<User class="w-3 h-3" />
+				Dr. {psychologist.nome} {psychologist.cognome}
+			</Badge>
+		{/if}
 	</div>
 
 	<form method="POST" use:enhance class="space-y-6">
-		<!-- Card Informazioni Anagrafiche -->
-
+		<!-- Card Informazioni Personali -->
 		<Card>
 			<CardHeader>
-				<CardTitle>Informazioni Anagrafiche</CardTitle>
+				<CardTitle>Informazioni Personali</CardTitle>
 			</CardHeader>
 			<CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div>
@@ -73,8 +126,8 @@
 						name="nome"
 						bind:value={$form.nome}
 						{...$constraints.nome}
-						aria-invalid={$tainted?.nome && $errors.nome ? 'true' : undefined}
-						class={$tainted?.nome && $errors.nome ? 'border-red-500' : ''}
+						aria-invalid={$errors.nome ? 'true' : undefined}
+						class={$errors.nome ? 'border-red-500' : ''}
 					/>
 					{#if $errors.nome && $tainted?.nome}
 						<p class="text-sm text-red-500 mt-1">{$errors.nome}</p>
@@ -89,7 +142,7 @@
 						bind:value={$form.cognome}
 						{...$constraints.cognome}
 						aria-invalid={$errors.cognome ? 'true' : undefined}
-						class={$tainted?.cognome && $errors.cognome ? 'border-red-500' : ''}
+						class={$errors.cognome ? 'border-red-500' : ''}
 					/>
 					{#if $errors.cognome && $tainted?.cognome}
 						<p class="text-sm text-red-500 mt-1">{$errors.cognome}</p>
@@ -105,7 +158,7 @@
 						placeholder="RSSMRA85M01H501Z"
 						{...$constraints.codiceFiscale}
 						aria-invalid={$errors.codiceFiscale ? 'true' : undefined}
-						class={$tainted?.codiceFiscale && $errors.codiceFiscale ? 'border-red-500' : ''}
+						class={$errors.codiceFiscale ? 'border-red-500' : ''}
 						style="text-transform: uppercase"
 					/>
 					{#if $errors.codiceFiscale && $tainted?.codiceFiscale}
@@ -122,13 +175,21 @@
 						bind:value={$form.dataNascita}
 						{...$constraints.dataNascita}
 						aria-invalid={$errors.dataNascita ? 'true' : undefined}
-						class={$tainted?.dataNascita && $errors.dataNascita ? 'border-red-500' : ''}
+						class={$errors.dataNascita ? 'border-red-500' : ''}
 					/>
 					{#if $errors.dataNascita && $tainted?.dataNascita}
 						<p class="text-sm text-red-500 mt-1">{$errors.dataNascita}</p>
 					{/if}
 				</div>
+			</CardContent>
+		</Card>
 
+		<!-- Card Contatti -->
+		<Card>
+			<CardHeader>
+				<CardTitle>Informazioni di Contatto</CardTitle>
+			</CardHeader>
+			<CardContent class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div>
 					<Label for="telefono">Telefono</Label>
 					<Input
@@ -138,7 +199,7 @@
 						placeholder="+39 xxx xxx xxxx"
 						{...$constraints.telefono}
 						aria-invalid={$errors.telefono ? 'true' : undefined}
-						class={$tainted?.telefono && $errors.telefono ? 'border-red-500' : ''}
+						class={$errors.telefono ? 'border-red-500' : ''}
 					/>
 					{#if $errors.telefono && $tainted?.telefono}
 						<p class="text-sm text-red-500 mt-1">{$errors.telefono}</p>
@@ -155,7 +216,7 @@
 						placeholder="paziente@esempio.com"
 						{...$constraints.email}
 						aria-invalid={$errors.email ? 'true' : undefined}
-						class={$tainted?.email && $errors.email ? 'border-red-500' : ''}
+						class={$errors.email ? 'border-red-500' : ''}
 					/>
 					{#if $errors.email && $tainted?.email}
 						<p class="text-sm text-red-500 mt-1">{$errors.email}</p>
@@ -164,26 +225,19 @@
 			</CardContent>
 		</Card>
 
-		<!-- Card Contatto di Emergenza -->
+		<!-- Card Contatto Emergenza -->
 		<Card>
 			<CardHeader>
-				<CardTitle>Contatto di Emergenza</CardTitle>
+				<CardTitle>Contatto di Emergenza *</CardTitle>
 			</CardHeader>
 			<CardContent class="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<div>
-					<Label for="contattoEmergenza.nome">Nome Contatto *</Label>
+					<Label for="contattoEmergenza.nome">Nome *</Label>
 					<Input
 						id="contattoEmergenza.nome"
 						name="contattoEmergenza.nome"
-						value={$form.contattoEmergenza?.nome || ''}
-						oninput={(e) => {
-							const target = e.target as HTMLInputElement;
-							$form.contattoEmergenza = { 
-								nome: target.value, 
-								telefono: $form.contattoEmergenza?.telefono || '', 
-								parentela: $form.contattoEmergenza?.parentela || '' 
-							};
-						}}
+						bind:value={$form.contattoEmergenza.nome}
+						{...$constraints.contattoEmergenza?.nome}
 						aria-invalid={$errors.contattoEmergenza?.nome ? 'true' : undefined}
 						class={$errors.contattoEmergenza?.nome ? 'border-red-500' : ''}
 					/>
@@ -193,19 +247,13 @@
 				</div>
 
 				<div>
-					<Label for="contattoEmergenza.telefono">Telefono Contatto *</Label>
+					<Label for="contattoEmergenza.telefono">Telefono *</Label>
 					<Input
 						id="contattoEmergenza.telefono"
 						name="contattoEmergenza.telefono"
-						value={$form.contattoEmergenza?.telefono || ''}
-						oninput={(e) => {
-							const target = e.target as HTMLInputElement;
-							$form.contattoEmergenza = { 
-								nome: $form.contattoEmergenza?.nome || '', 
-								telefono: target.value, 
-								parentela: $form.contattoEmergenza?.parentela || '' 
-							};
-						}}
+						bind:value={$form.contattoEmergenza.telefono}
+						placeholder="+39 xxx xxx xxxx"
+						{...$constraints.contattoEmergenza?.telefono}
 						aria-invalid={$errors.contattoEmergenza?.telefono ? 'true' : undefined}
 						class={$errors.contattoEmergenza?.telefono ? 'border-red-500' : ''}
 					/>
@@ -219,16 +267,9 @@
 					<Input
 						id="contattoEmergenza.parentela"
 						name="contattoEmergenza.parentela"
-						value={$form.contattoEmergenza?.parentela || ''}
-						oninput={(e) => {
-							const target = e.target as HTMLInputElement;
-							$form.contattoEmergenza = { 
-								nome: $form.contattoEmergenza?.nome || '', 
-								telefono: $form.contattoEmergenza?.telefono || '', 
-								parentela: target.value 
-							};
-						}}
-						placeholder="es. Coniuge, Genitore, Amico"
+						bind:value={$form.contattoEmergenza.parentela}
+						placeholder="es. Madre, Padre, Coniuge"
+						{...$constraints.contattoEmergenza?.parentela}
 						aria-invalid={$errors.contattoEmergenza?.parentela ? 'true' : undefined}
 						class={$errors.contattoEmergenza?.parentela ? 'border-red-500' : ''}
 					/>
@@ -239,27 +280,26 @@
 			</CardContent>
 		</Card>
 
-		<!-- Card Informazioni Cliniche -->
+		<!-- Card Note Anamnestiche -->
 		<Card>
 			<CardHeader>
-				<CardTitle>Informazioni Cliniche</CardTitle>
-				<p class="text-sm text-gray-600">Opzionale - può essere completato successivamente</p>
+				<CardTitle>Note Anamnestiche</CardTitle>
 			</CardHeader>
-			<CardContent class="space-y-4">
+			<CardContent>
 				<div>
-					<Label for="anamnesi">Anamnesi</Label>
+					<Label for="anamnesi">Anamnesi (opzionale)</Label>
 					<Textarea
 						id="anamnesi"
 						name="anamnesi"
-						placeholder="Diagnosi precedenti, interventi, allergie, ecc."
-						rows={3}
 						bind:value={$form.anamnesi}
+						placeholder="Note anamnestiche del paziente..."
+						rows={4}
 					/>
 				</div>
 			</CardContent>
 		</Card>
 
-		<!-- Sezione Consenso -->
+		<!-- Card Privacy -->
 		<Card>
 			<CardContent class="pt-6">
 				<div class="flex items-start space-x-2">
@@ -274,34 +314,36 @@
 							for="consensoTrattamentoDati"
 							class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 						>
-							Consenso al Trattamento dei Dati *
+							Consenso al Trattamento Dati *
 						</Label>
 						<p class="text-xs text-muted-foreground">
-							Acconsento al trattamento dei miei dati personali e sanitari secondo il Regolamento GDPR ai fini del trattamento psicologico.
+							Il paziente acconsente al trattamento dei dati personali secondo la normativa GDPR
 						</p>
+						{#if $errors.consensoTrattamentoDati && $tainted?.consensoTrattamentoDati}
+							<p class="text-sm text-red-500">{$errors.consensoTrattamentoDati}</p>
+						{/if}
 					</div>
 				</div>
-				{#if $errors.consensoTrattamentoDati && $tainted?.consensoTrattamentoDati}
-					<p class="text-sm text-red-500 mt-2">{$errors.consensoTrattamentoDati}</p>
-				{/if}
 			</CardContent>
 		</Card>
 
 		<!-- Azioni Form -->
 		<div class="flex justify-between pt-6 border-t">
-			<Button variant="outline" type="button" onclick={() => goto('/pazienti')}>
+			<Button 
+				variant="outline" 
+				type="button" 
+				onclick={() => goto(`/psicologi/${data.psychologistId}/pazienti`)}
+			>
 				Annulla
 			</Button>
 
-			<div class="flex gap-3">
-				<Button type="submit" disabled={$submitting}>
-					{#if $submitting}
-						Creazione paziente...
-					{:else}
-						Crea Paziente
-					{/if}
-				</Button>
-			</div>
+			<Button type="submit" disabled={$submitting}>
+				{#if $submitting}
+					Registrazione paziente...
+				{:else}
+					Registra Paziente
+				{/if}
+			</Button>
 		</div>
 	</form>
 </div>

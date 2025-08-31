@@ -58,10 +58,10 @@ export function generaFatturaPDF(fattura: InvoiceWithDetails) {
   // Description
   yPos += 15;
   doc.setFont('helvetica', 'normal');
-  doc.text(fattura.descrizione || 'Ci pregiamo rimetterVi fattura per prestazioni professionali relative a :', leftMargin, yPos);
+  doc.text('Ci pregiamo rimetterVi fattura per prestazioni professionali relative a :', leftMargin, yPos);
 
   yPos += 7;
-  doc.text(`sostegno psicologico`, leftMargin + 5, yPos);
+  doc.text(fattura.descrizione || `sostegno psicologico`, leftMargin + 5, yPos);
 
   // Financial breakdown
   yPos += 25;

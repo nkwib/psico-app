@@ -1,13 +1,11 @@
 <script lang="ts">
     import { Button } from '$lib/components/ui/button';
-    import { Menu, Users, FileText, Receipt, Home, Settings } from 'lucide-svelte';
+    import { Menu, Users, Home, Settings } from 'lucide-svelte';
     import { page } from '$app/stores';
 
     const navigazione = [
         { nome: 'Panoramica', href: '/', icona: Home },
         { nome: 'Psicologi', href: '/psicologi', icona: Users },
-        { nome: 'Pazienti', href: '/pazienti', icona: Users },
-        { nome: 'Fatture', href: '/fatture', icona: Receipt },
         { nome: 'Impostazioni', href: '/impostazioni', icona: Settings }
     ];
 
