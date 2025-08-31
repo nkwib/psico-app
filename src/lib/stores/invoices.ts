@@ -20,8 +20,8 @@ function createInvoiceStore() {
     subscribe,
     add: (invoice: Omit<InvoiceWithDetails, 'id' | 'dataCreazione'>) =>
       update((invoices) => {
-        const newInvoices = [...invoices, { 
-          ...invoice, 
+        const newInvoices = [...invoices, {
+          ...invoice,
           id: Date.now(),
           dataCreazione: new Date().toISOString(),
           stato: invoice.stato || 'bozza'
@@ -60,11 +60,11 @@ function createInvoiceStore() {
       const year = new Date().getFullYear();
       const stored = browser ? localStorage.getItem("invoices") : null;
       const invoices = stored ? JSON.parse(stored) : [];
-      const currentYearInvoices = invoices.filter((i: InvoiceWithDetails) => 
+      const currentYearInvoices = invoices.filter((i: InvoiceWithDetails) =>
         i.numeroFattura?.includes(year.toString())
       );
       const nextNumber = currentYearInvoices.length + 1;
-      return `${year}-${String(nextNumber).padStart(4, '0')}`;
+      return `${nextNumber}/${year}`;
     }
   };
 }
@@ -77,15 +77,15 @@ export const invoiceStats = derived(
   ($invoices) => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
-    
+
     const monthlyInvoices = $invoices.filter(i => {
       const invoiceDate = new Date(i.data);
-      return invoiceDate.getMonth() === currentMonth && 
-             invoiceDate.getFullYear() === currentYear;
+      return invoiceDate.getMonth() === currentMonth &&
+        invoiceDate.getFullYear() === currentYear;
     });
 
-    const totalRevenue = monthlyInvoices.reduce((sum, i) => 
-      sum + (i.importo * (1 + i.aliquotaIva / 100)), 0
+    const totalRevenue = monthlyInvoices.reduce((sum, i) =>
+      sum + i.importo, 0
     );
 
     return {

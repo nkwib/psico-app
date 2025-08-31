@@ -97,7 +97,13 @@
 							{#each filteredPatientsData as paziente}
 								<TableRow>
 									<TableCell class="font-medium">
-										{paziente.nome} {paziente.cognome}
+										<Button 
+											href="/pazienti/{paziente.id}" 
+											variant="link" 
+											class="p-0 h-auto font-medium text-blue-600 hover:text-blue-800"
+										>
+											{paziente.nome} {paziente.cognome}
+										</Button>
 									</TableCell>
 									<TableCell>{paziente.codiceFiscale}</TableCell>
 									<TableCell>{paziente.telefono || '-'}</TableCell>

@@ -25,6 +25,13 @@
 	let psychologistsData = $state(get(psychologists));
 	let preferredPsychologistData = $state(get(preferredPsychologist));
 	
+	// Get URL parameters
+	let urlParams = $state(new URLSearchParams());
+	
+	$effect(() => {
+		urlParams = new URLSearchParams(window.location.search);
+	});
+	
 	$effect(() => {
 		const unsubPatients = patients.subscribe(value => patientsData = value);
 		const unsubPsychologists = psychologists.subscribe(value => psychologistsData = value);
@@ -62,7 +69,17 @@
 				note: $form.note || undefined,
 				paziente: selectedPatient,
 				psicologo: selectedPsychologist,
-				stato: 'emessa' as const
+				stato: 'emessa' as const,
+				// Add missing required fields with defaults
+				dettaglioSedute: true,
+				numeroSedute: 1,
+				tipoPrestazione: 'sostegno_psicologico' as const,
+				speseAnticipate: 0,
+				mostraPrivacy: false,
+				modalitaPagamento: 'bonifico' as const,
+				regimeFiscale: 'forfettario' as const,
+				marcaDaBollo: false,
+				importoMarcaDaBollo: 2.00
 			};
 
 			invoices.add(invoice);
@@ -84,9 +101,25 @@
 	});
 
 	// Initialize form with defaults
-	$form.idPsicologo = preferredPsychologistData?.id?.toString() || '';
 	$form.data = today;
 	$form.numeroFattura = nextInvoiceNumber;
+	
+	// Set preferred psychologist and selected patient in a reactive context
+	$effect(() => {
+		// Set preferred psychologist
+		if (preferredPsychologistData?.id) {
+			$form.idPsicologo = preferredPsychologistData.id.toString();
+		}
+		
+		// Set patient from URL parameter if provided
+		const pazienteId = urlParams.get('paziente');
+		if (pazienteId && patientsData.length > 0) {
+			const paziente = patientsData.find(p => p.id?.toString() === pazienteId);
+			if (paziente) {
+				$form.idPaziente = pazienteId;
+			}
+		}
+	});
 	$form.aliquotaIva = 0; // Regime forfettario
 	$form.importo = 80; // Default session price
 
@@ -144,7 +177,7 @@
 				<div>
 					<Label for="idPsicologo">Psicologo *</Label>
 					<Select.Root type="single" bind:value={$form.idPsicologo}>
-						<Select.Trigger class="{$errors.idPsicologo ? 'border-red-500' : ''}">
+						<Select.Trigger class={$errors.idPsicologo ? 'border-red-500' : ''}>
 							{#if $form.idPsicologo}
 								{@const selected = psychologistsData.find(p => p.id?.toString() === $form.idPsicologo)}
 								{#if selected}
@@ -175,7 +208,7 @@
 				<div>
 					<Label for="idPaziente">Paziente *</Label>
 					<Select.Root type="single" bind:value={$form.idPaziente}>
-						<Select.Trigger class="{$errors.idPaziente ? 'border-red-500' : ''}">
+						<Select.Trigger class={$errors.idPaziente ? 'border-red-500' : ''}>
 							{#if $form.idPaziente}
 								{@const selected = patientsData.find(p => p.id?.toString() === $form.idPaziente)}
 								{#if selected}

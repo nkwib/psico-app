@@ -301,7 +301,7 @@
 					bind:this={inputFile}
 					type="file"
 					accept=".json"
-					on:change={handleFileSelect}
+					onchange={handleFileSelect}
 					class="hidden"
 				/>
 				

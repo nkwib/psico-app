@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
-import { formattatoreData, formattatoreValuta } from "./italiano";
-import type { InvoiceWithDetails } from "$lib/stores/invoices";
+import { formattatoreData, formattatoreValuta } from './italiano.js';
+import type { InvoiceWithDetails } from '$lib/stores/invoices';
 
 export function generaFatturaPDF(fattura: InvoiceWithDetails) {
   const doc = new jsPDF({
@@ -44,11 +44,24 @@ export function generaFatturaPDF(fattura: InvoiceWithDetails) {
   let yPos = 75;
   doc.setFontSize(10);
   doc.text('Egr. Sig.', leftMargin, yPos);
-  doc.text(`${fattura.paziente?.nome} ${fattura.paziente?.cognome}`, 50, yPos);
+
+  // Draw black box over sensitive data (simulating privacy)
+  if (fattura.mostraPrivacy) {
+    doc.setFillColor(0, 0, 0);
+    doc.rect(50, yPos - 4, 60, 6, 'F');
+  } else {
+    doc.text(`${fattura.paziente?.nome} ${fattura.paziente?.cognome}`, 50, yPos);
+  }
 
   yPos += 10;
   doc.text('Cod. Fisc.', leftMargin, yPos);
-  doc.text(fattura.paziente?.codiceFiscale || '', 50, yPos);
+
+  if (fattura.mostraPrivacy) {
+    doc.setFillColor(0, 0, 0);
+    doc.rect(50, yPos - 4, 50, 6, 'F');
+  } else {
+    doc.text(fattura.paziente?.codiceFiscale || '', 50, yPos);
+  }
 
   // Invoice number and date
   yPos += 20;
@@ -60,15 +73,25 @@ export function generaFatturaPDF(fattura: InvoiceWithDetails) {
   doc.setFont('helvetica', 'normal');
   doc.text(fattura.descrizione || 'Ci pregiamo rimetterVi fattura per prestazioni professionali relative a :', leftMargin, yPos);
 
-  yPos += 7;
-  doc.text(`sostegno psicologico`, leftMargin + 5, yPos);
+  if (fattura.dettaglioSedute) {
+    yPos += 7;
+    doc.text(`sostegno psicologico numero ${fattura.numeroSedute || '1'} seduta`, leftMargin + 5, yPos);
+  }
 
   // Financial breakdown
   yPos += 25;
 
   // Table-like structure for costs
+  const tableStartY = yPos;
   const col1X = leftMargin;
   const col2X = pageWidth - rightMargin - 40;
+
+  // Spese anticipate (if any)
+  if (fattura.speseAnticipate && fattura.speseAnticipate > 0) {
+    doc.text('Spese anticipate (*)', col1X, yPos);
+    doc.text('0', col2X, yPos, { align: 'right' });
+    yPos += 7;
+  }
 
   // Onorari (main fee)
   doc.text('Onorari', col1X, yPos);
@@ -141,66 +164,52 @@ export function generaFatturaPDF(fattura: InvoiceWithDetails) {
   return doc;
 }
 
-export function generaRicevutaPDF(fattura: InvoiceWithDetails) {
-  const totale = fattura.importo; // Senza IVA per prestazioni sanitarie
+// Helper function to generate invoice number
+export function generaNumeroFattura(numeroProgressivo: number, anno: number): string {
+  return `${numeroProgressivo}/${anno}`;
+}
 
-  const contenuto = `
-================================================================================
-                              RICEVUTA PRESTAZIONE
-================================================================================
+// Extended invoice generation with more options
+export function generaFatturaDettagliata(dati: any) {
+  const fattura = {
+    ...dati,
+    numeroFattura: dati.numeroFattura || generaNumeroFattura(dati.numeroProgressivo, new Date().getFullYear()),
+    data: dati.data || new Date().toISOString(),
+    descrizione: dati.descrizione || 'Ci pregiamo rimetterVi fattura per prestazioni professionali relative a :',
+    dettaglioSedute: dati.dettaglioSedute !== false,
+    numeroSedute: dati.numeroSedute || 1,
+    mostraPrivacy: dati.mostraPrivacy || false,
+    speseAnticipate: dati.speseAnticipate || 0
+  };
 
-RICEVUTA N. ${fattura.numeroFattura}
-Data: ${formattatoreData.format(new Date(fattura.data))}
+  return generaFatturaPDF(fattura);
+}
 
---------------------------------------------------------------------------------
-PROFESSIONISTA:
---------------------------------------------------------------------------------
-Dott. ${fattura.psicologo?.nome} ${fattura.psicologo?.cognome}
-Codice Fiscale: ${fattura.psicologo?.codiceFiscale}
-${fattura.psicologo?.numeroOrdine ? `Iscrizione Ordine degli Psicologi: ${fattura.psicologo.numeroOrdine}` : ''}
+// Export function for bulk invoice generation
+export function generaFattureBulk(fatture: InvoiceWithDetails[]) {
+  const risultati: Array<{
+    success: boolean;
+    numeroFattura: string;
+    paziente?: string;
+    error?: string;
+  }> = [];
 
---------------------------------------------------------------------------------
-RICEVUTA RILASCIATA A:
---------------------------------------------------------------------------------
-${fattura.paziente?.nome} ${fattura.paziente?.cognome}
-Codice Fiscale: ${fattura.paziente?.codiceFiscale}
+  fatture.forEach((fattura, index) => {
+    try {
+      const doc = generaFatturaPDF(fattura);
+      risultati.push({
+        success: true,
+        numeroFattura: fattura.numeroFattura,
+        paziente: `${fattura.paziente?.nome} ${fattura.paziente?.cognome}`
+      });
+    } catch (error) {
+      risultati.push({
+        success: false,
+        error: error instanceof Error ? error.message : 'Errore sconosciuto',
+        numeroFattura: fattura.numeroFattura
+      });
+    }
+  });
 
---------------------------------------------------------------------------------
-PRESTAZIONE:
---------------------------------------------------------------------------------
-${fattura.descrizione}
-
-Importo:                                 ${formattatoreValuta.format(totale)}
-
---------------------------------------------------------------------------------
-
-Prestazione sanitaria esente IVA ai sensi dell'art. 10 n. 18 DPR 633/72.
-Esente da bollo ai sensi dell'art. 5 Tab. B DPR 642/72.
-
-Il sottoscritto dichiara di aver ricevuto la somma sopra indicata.
-
-Firma _________________________
-
-================================================================================
-                     Documento generato automaticamente
-                        Gestionale Studio Psicologico
-================================================================================
-`;
-
-  // Create a Blob from the text content
-  const blob = new Blob([contenuto], { type: "text/plain;charset=utf-8" });
-
-  // Create a download link
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `Ricevuta_${fattura.numeroFattura}_${fattura.paziente?.cognome || 'Cliente'}.txt`;
-
-  // Trigger download
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  // Clean up
-  URL.revokeObjectURL(url);
+  return risultati;
 }

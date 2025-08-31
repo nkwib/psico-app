@@ -21,6 +21,7 @@
 		validators: zod(patientSchema),
 		dataType: 'json',
 		resetForm: false,
+		validationMethod: 'onblur',
 		onSubmit: async ({ formData, cancel }) => {
 			// Gestisce l'invio del form lato client per localStorage
 			cancel(); // Previene l'invio al server
@@ -59,6 +60,7 @@
 
 	<form method="POST" use:enhance class="space-y-6">
 		<!-- Card Informazioni Anagrafiche -->
+
 		<Card>
 			<CardHeader>
 				<CardTitle>Informazioni Anagrafiche</CardTitle>
@@ -71,8 +73,8 @@
 						name="nome"
 						bind:value={$form.nome}
 						{...$constraints.nome}
-						aria-invalid={$errors.nome ? 'true' : undefined}
-						class={$errors.nome ? 'border-red-500' : ''}
+						aria-invalid={$tainted?.nome && $errors.nome ? 'true' : undefined}
+						class={$tainted?.nome && $errors.nome ? 'border-red-500' : ''}
 					/>
 					{#if $errors.nome && $tainted?.nome}
 						<p class="text-sm text-red-500 mt-1">{$errors.nome}</p>
@@ -87,7 +89,7 @@
 						bind:value={$form.cognome}
 						{...$constraints.cognome}
 						aria-invalid={$errors.cognome ? 'true' : undefined}
-						class={$errors.cognome ? 'border-red-500' : ''}
+						class={$tainted?.cognome && $errors.cognome ? 'border-red-500' : ''}
 					/>
 					{#if $errors.cognome && $tainted?.cognome}
 						<p class="text-sm text-red-500 mt-1">{$errors.cognome}</p>
@@ -103,7 +105,7 @@
 						placeholder="RSSMRA85M01H501Z"
 						{...$constraints.codiceFiscale}
 						aria-invalid={$errors.codiceFiscale ? 'true' : undefined}
-						class={$errors.codiceFiscale ? 'border-red-500' : ''}
+						class={$tainted?.codiceFiscale && $errors.codiceFiscale ? 'border-red-500' : ''}
 						style="text-transform: uppercase"
 					/>
 					{#if $errors.codiceFiscale && $tainted?.codiceFiscale}
@@ -120,7 +122,7 @@
 						bind:value={$form.dataNascita}
 						{...$constraints.dataNascita}
 						aria-invalid={$errors.dataNascita ? 'true' : undefined}
-						class={$errors.dataNascita ? 'border-red-500' : ''}
+						class={$tainted?.dataNascita && $errors.dataNascita ? 'border-red-500' : ''}
 					/>
 					{#if $errors.dataNascita && $tainted?.dataNascita}
 						<p class="text-sm text-red-500 mt-1">{$errors.dataNascita}</p>
@@ -136,7 +138,7 @@
 						placeholder="+39 xxx xxx xxxx"
 						{...$constraints.telefono}
 						aria-invalid={$errors.telefono ? 'true' : undefined}
-						class={$errors.telefono ? 'border-red-500' : ''}
+						class={$tainted?.telefono && $errors.telefono ? 'border-red-500' : ''}
 					/>
 					{#if $errors.telefono && $tainted?.telefono}
 						<p class="text-sm text-red-500 mt-1">{$errors.telefono}</p>
@@ -153,7 +155,7 @@
 						placeholder="paziente@esempio.com"
 						{...$constraints.email}
 						aria-invalid={$errors.email ? 'true' : undefined}
-						class={$errors.email ? 'border-red-500' : ''}
+						class={$tainted?.email && $errors.email ? 'border-red-500' : ''}
 					/>
 					{#if $errors.email && $tainted?.email}
 						<p class="text-sm text-red-500 mt-1">{$errors.email}</p>
@@ -173,7 +175,15 @@
 					<Input
 						id="contattoEmergenza.nome"
 						name="contattoEmergenza.nome"
-						bind:value={$form.contattoEmergenza.nome}
+						value={$form.contattoEmergenza?.nome || ''}
+						oninput={(e) => {
+							const target = e.target as HTMLInputElement;
+							$form.contattoEmergenza = { 
+								nome: target.value, 
+								telefono: $form.contattoEmergenza?.telefono || '', 
+								parentela: $form.contattoEmergenza?.parentela || '' 
+							};
+						}}
 						aria-invalid={$errors.contattoEmergenza?.nome ? 'true' : undefined}
 						class={$errors.contattoEmergenza?.nome ? 'border-red-500' : ''}
 					/>
@@ -187,7 +197,15 @@
 					<Input
 						id="contattoEmergenza.telefono"
 						name="contattoEmergenza.telefono"
-						bind:value={$form.contattoEmergenza.telefono}
+						value={$form.contattoEmergenza?.telefono || ''}
+						oninput={(e) => {
+							const target = e.target as HTMLInputElement;
+							$form.contattoEmergenza = { 
+								nome: $form.contattoEmergenza?.nome || '', 
+								telefono: target.value, 
+								parentela: $form.contattoEmergenza?.parentela || '' 
+							};
+						}}
 						aria-invalid={$errors.contattoEmergenza?.telefono ? 'true' : undefined}
 						class={$errors.contattoEmergenza?.telefono ? 'border-red-500' : ''}
 					/>
@@ -201,7 +219,15 @@
 					<Input
 						id="contattoEmergenza.parentela"
 						name="contattoEmergenza.parentela"
-						bind:value={$form.contattoEmergenza.parentela}
+						value={$form.contattoEmergenza?.parentela || ''}
+						oninput={(e) => {
+							const target = e.target as HTMLInputElement;
+							$form.contattoEmergenza = { 
+								nome: $form.contattoEmergenza?.nome || '', 
+								telefono: $form.contattoEmergenza?.telefono || '', 
+								parentela: target.value 
+							};
+						}}
 						placeholder="es. Coniuge, Genitore, Amico"
 						aria-invalid={$errors.contattoEmergenza?.parentela ? 'true' : undefined}
 						class={$errors.contattoEmergenza?.parentela ? 'border-red-500' : ''}

@@ -15,11 +15,24 @@ function createPsychologistStore() {
     subscribe,
     add: (psychologist: Omit<Psychologist, 'id' | 'dataCreazione'>) =>
       update((psychologists) => {
-        const newPsychologists = [...psychologists, { 
-          ...psychologist, 
-          id: Date.now(),
+        const newId = Date.now();
+        let newPsychologists = [...psychologists, {
+          ...psychologist,
+          id: newId,
           dataCreazione: new Date().toISOString()
         }];
+
+        // If the new psychologist is marked as preferred, remove preferred status from others
+        if (psychologist.isPreferito) {
+          newPsychologists = newPsychologists.map((p) => ({
+            ...p,
+            isPreferito: p.id === newId
+          }));
+          if (browser) {
+            localStorage.setItem("preferredPsychologist", newId.toString());
+          }
+        }
+
         if (browser)
           localStorage.setItem("psychologists", JSON.stringify(newPsychologists));
         return newPsychologists;
@@ -40,6 +53,7 @@ function createPsychologistStore() {
       }),
     setPreferred: (id: number) =>
       update((psychologists) => {
+        // Ensure only one psychologist is marked as preferred
         const updated = psychologists.map((p) => ({
           ...p,
           isPreferito: p.id === id
@@ -49,6 +63,25 @@ function createPsychologistStore() {
           localStorage.setItem("preferredPsychologist", id.toString());
         }
         return updated;
+      }),
+    // Function to fix data inconsistencies
+    fixPreferredStatus: () =>
+      update((psychologists) => {
+        // Find the first psychologist marked as preferred
+        const preferred = psychologists.find(p => p.isPreferito);
+        if (preferred) {
+          // Ensure only this one is marked as preferred
+          const updated = psychologists.map((p) => ({
+            ...p,
+            isPreferito: p.id === preferred.id
+          }));
+          if (browser) {
+            localStorage.setItem("psychologists", JSON.stringify(updated));
+            localStorage.setItem("preferredPsychologist", preferred.id?.toString() || '');
+          }
+          return updated;
+        }
+        return psychologists;
       }),
     clear: () => {
       set([]);

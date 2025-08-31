@@ -21,6 +21,9 @@
 		const unsubPsychologists = psychologists.subscribe(value => psychologistsData = value);
 		const unsubPreferred = preferredPsychologist.subscribe(value => preferredPsychologistData = value);
 		
+		// Fix any data inconsistencies on page load
+		psychologists.fixPreferredStatus();
+		
 		return () => {
 			unsubPsychologists();
 			unsubPreferred();
