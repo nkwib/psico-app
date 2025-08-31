@@ -3,8 +3,10 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { Toaster } from 'svelte-sonner';
 	import Navigazione from '$lib/components/Navigazione.svelte';
+	import PsychologistSelector from '$lib/components/PsychologistSelector.svelte';
   import { Button } from '$lib/components/ui/button';
   import { House } from 'lucide-svelte';
+  import { goto } from '$app/navigation';
 	// import { Button } from '$lib/components/ui/button';
 	// import { UserCircle } from 'lucide-svelte';
 	
@@ -22,7 +24,7 @@
 			<div class="flex items-center justify-between h-16">
 				<!-- Logo e Titolo -->
 				<div class="flex items-center space-x-4">
-					<Button href="/" variant="ghost" class="flex items-center gap-2">
+					<Button variant="ghost"  onclick={() => goto('/')}>
 						<House class="w-5 h-5" />
 						<h1 class="text-xl font-bold text-gray-900">Gestionale Studio</h1>
 					</Button>
@@ -30,6 +32,8 @@
 
 				<!-- Navigazione -->
 				<div class="flex items-center space-x-4">
+					<PsychologistSelector />
+					<div class="h-6 w-px bg-gray-300"></div>
 					<Navigazione />
 					
 					<!-- <div class="hidden lg:block">
