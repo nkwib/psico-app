@@ -13,8 +13,15 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
+	import * as Select from '$lib/components/ui/select';
 
 	let { data } = $props();
+	
+	// Electronic invoicing state
+	let fatturaElettronicaAbilitata = $state(false);
+	let regimeFiscale = $state<'forfettario' | 'ordinario' | 'minimi'>('forfettario');
+	let pecFatturazione = $state('');
+	let codiceDestinatario = $state('');
 
 	const { form, errors, enhance, constraints, submitting, tainted } = superForm(data.form, {
 		validators: zod(psychologistSchema),
@@ -32,7 +39,12 @@
 				telefono: $form.telefono,
 				email: $form.email,
 				numeroOrdine: $form.numeroOrdine || undefined,
-				isPreferito: $form.isPreferito
+				isPreferito: $form.isPreferito,
+				// Fatturazione elettronica
+				fatturaElettronicaAbilitata,
+				regimeFiscale,
+				pecFatturazione: pecFatturazione || undefined,
+				codiceDestinatario: codiceDestinatario || undefined
 			};
 
 			psychologists.add(datiPsicologo);
@@ -224,6 +236,86 @@
 						</p>
 					</div>
 				</div>
+			</CardContent>
+		</Card>
+
+		<!-- Card Fatturazione Elettronica -->
+		<Card>
+			<CardHeader>
+				<CardTitle>Fatturazione Elettronica</CardTitle>
+			</CardHeader>
+			<CardContent class="space-y-4">
+				<div class="flex items-start space-x-2">
+					<Checkbox
+						id="fatturaElettronicaAbilitata"
+						bind:checked={fatturaElettronicaAbilitata}
+					/>
+					<div class="grid gap-1.5 leading-none">
+						<Label
+							for="fatturaElettronicaAbilitata"
+							class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+						>
+							Abilita Fatturazione Elettronica
+						</Label>
+						<p class="text-xs text-muted-foreground">
+							Permette l'invio automatico delle fatture al Sistema di Interscambio (SDI)
+						</p>
+					</div>
+				</div>
+
+				{#if fatturaElettronicaAbilitata}
+					<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+						<div>
+							<Label for="regimeFiscale">Regime Fiscale *</Label>
+							<Select.Root bind:value={regimeFiscale} type="single">
+								<Select.Trigger>
+									{regimeFiscale === 'forfettario' ? 'Forfettario' : 
+									 regimeFiscale === 'ordinario' ? 'Ordinario' : 
+									 regimeFiscale === 'minimi' ? 'Contribuenti Minimi' : 
+									 'Seleziona regime fiscale'}
+								</Select.Trigger>
+								<Select.Content>
+									<Select.Item value="forfettario">Forfettario (art. 1, c. 54-89 L. 190/2014)</Select.Item>
+									<Select.Item value="ordinario">Ordinario</Select.Item>
+									<Select.Item value="minimi">Contribuenti Minimi</Select.Item>
+								</Select.Content>
+							</Select.Root>
+						</div>
+
+						<div>
+							<Label for="pecFatturazione">PEC Fatturazione</Label>
+							<Input
+								id="pecFatturazione"
+								bind:value={pecFatturazione}
+								placeholder="fatturazione@pec.example.com"
+								type="email"
+							/>
+							<p class="text-xs text-muted-foreground mt-1">
+								PEC dedicata per ricevere notifiche di fatturazione elettronica
+							</p>
+						</div>
+
+						<div class="md:col-span-2">
+							<Label for="codiceDestinatario">Codice Destinatario (B2B)</Label>
+							<Input
+								id="codiceDestinatario"
+								bind:value={codiceDestinatario}
+								placeholder="ABCDEFG"
+								maxlength={7}
+							/>
+							<p class="text-xs text-muted-foreground mt-1">
+								Codice di 7 caratteri per clienti aziendali. Lasciare vuoto per privati.
+							</p>
+						</div>
+					</div>
+
+					<Alert>
+						<AlertDescription>
+							<strong>Nota:</strong> Per utilizzare la fatturazione elettronica è necessario configurare 
+							le credenziali Aruba nelle impostazioni del sistema e completare l'attivazione del servizio.
+						</AlertDescription>
+					</Alert>
+				{/if}
 			</CardContent>
 		</Card>
 

@@ -27,6 +27,9 @@
 	let invoicesData = $state<any[]>([]);
 	let psychologist = $state<any>(null);
 	
+	// Electronic invoicing state
+	let electronicInvoicingEnabled = $state(false);
+	
 	// Store subscriptions
 	let unsubPatients: (() => void) | null = null;
 	let unsubInvoices: (() => void) | null = null;
@@ -92,7 +95,10 @@
 				modalitaPagamento: 'bonifico' as const,
 				regimeFiscale: 'forfettario' as const,
 				marcaDaBollo: false,
-				importoMarcaDaBollo: 2.00
+				importoMarcaDaBollo: 2.00,
+				// Electronic invoicing fields
+				fatturazioneElettronica: electronicInvoicingEnabled,
+				sdiStatus: electronicInvoicingEnabled ? 'pending' as const : undefined
 			};
 
 			invoices.add(invoice);
@@ -370,6 +376,52 @@
 				</div>
 			</CardContent>
 		</Card>
+
+		<!-- Card Fatturazione Elettronica -->
+		{#if psychologist?.fatturaElettronicaAbilitata}
+			<Card>
+				<CardHeader>
+					<CardTitle class="flex items-center gap-2">
+						<span>Fatturazione Elettronica</span>
+						{#if electronicInvoicingEnabled}
+							<Badge variant="secondary">Attivata</Badge>
+						{/if}
+					</CardTitle>
+				</CardHeader>
+				<CardContent class="space-y-4">
+					<div class="flex items-center space-x-2">
+						<Checkbox
+							id="fatturazioneElettronica"
+							bind:checked={electronicInvoicingEnabled}
+							disabled={!psychologist.fatturaElettronicaAbilitata}
+						/>
+						<Label for="fatturazioneElettronica" class="cursor-pointer">
+							Abilita invio tramite Sistema di Interscambio (SDI)
+						</Label>
+					</div>
+					
+					{#if electronicInvoicingEnabled}
+						<div class="p-4 bg-blue-50 border border-blue-200 rounded-md">
+							<h4 class="text-sm font-medium text-blue-800 mb-2">Informazioni Importanti</h4>
+							<ul class="text-sm text-blue-700 space-y-1 list-disc list-inside">
+								<li>La fattura sarà inviata automaticamente al Sistema di Interscambio</li>
+								<li>Una volta inviata non potrà più essere modificata</li>
+								<li>Riceverai notifiche sullo stato di accettazione/rifiuto</li>
+								<li>In caso di errori potrai creare una nota di credito</li>
+							</ul>
+						</div>
+
+						{#if psychologist.regimeFiscale === 'forfettario'}
+							<div class="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+								<p class="text-sm text-yellow-800">
+									<strong>Regime Forfettario:</strong> Verifica che i dati fiscali del paziente siano corretti per la fatturazione elettronica.
+								</p>
+							</div>
+						{/if}
+					{/if}
+				</CardContent>
+			</Card>
+		{/if}
 
 		<!-- Azioni Form -->
 		<div class="flex justify-between pt-6 border-t">

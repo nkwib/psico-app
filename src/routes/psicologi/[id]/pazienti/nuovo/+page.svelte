@@ -78,7 +78,8 @@
 				regimeFiscale: 'forfettario' as const,
 				marcaDaBollo: false,
 				importoMarcaDaBollo: 2.00,
-				note: 'Registrazione iniziale paziente'
+				note: 'Registrazione iniziale paziente',
+				fatturazioneElettronica: false
 			};
 			
 			invoices.add(firstInvoice);

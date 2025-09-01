@@ -35,6 +35,12 @@ export const psychologistSchema = z.object({
   pec: z.string().email('Formato PEC non valido').optional(),
   codiceUnivoco: z.string().optional(), // Per fatturazione elettronica
   isPreferito: z.boolean().optional(),
+
+  // Fatturazione elettronica
+  fatturaElettronicaAbilitata: z.boolean().optional().default(false),
+  pecFatturazione: z.string().email('Formato PEC non valido').optional(), // PEC per fatturazione elettronica
+  codiceDestinatario: z.string().length(7, 'Il codice destinatario deve essere di 7 caratteri').optional(), // Per B2B
+  regimeFiscale: z.enum(['forfettario', 'ordinario', 'minimi']).optional().default('forfettario'),
 });
 
 // Schema per Paziente
@@ -81,6 +87,10 @@ export const patientSchema = z.object({
     aliquotaIva: z.number().min(0).max(100).optional(),
     prezzoIncludeIva: z.boolean().optional(),
   }).optional(),
+
+  // Fatturazione elettronica
+  codiceDestinatario: z.string().length(7, 'Il codice destinatario deve essere di 7 caratteri').optional(), // Per B2B
+  pec: z.string().email('Formato PEC non valido').optional(), // PEC per fatturazione elettronica B2C
 });
 
 // Schema per Fattura/Parcella
@@ -135,6 +145,31 @@ export const invoiceSchema = z.object({
   // Marca da bollo
   marcaDaBollo: z.boolean().optional().default(false), // Per importi > 77,47€ in regime forfettario
   importoMarcaDaBollo: z.number().optional().default(2.00),
+
+  // Fatturazione elettronica
+  fatturazioneElettronica: z.boolean().optional().default(false),
+  xmlData: z.string().optional(), // Cached FatturaPA XML
+  xmlHash: z.string().optional(), // Hash of XML for integrity check
+  sdiId: z.string().optional(), // Sistema di Interscambio ID
+  sdiStatus: z.enum(['pending', 'sent', 'accepted', 'rejected', 'delivered']).optional(),
+  sdiErrors: z.array(z.object({
+    code: z.string(),
+    description: z.string(),
+    severity: z.enum(['error', 'warning']).optional()
+  })).optional(),
+  sdiHistory: z.array(z.object({
+    date: z.string(),
+    status: z.enum(['pending', 'sent', 'accepted', 'rejected', 'delivered']),
+    note: z.string().optional(),
+    errors: z.array(z.object({
+      code: z.string(),
+      description: z.string(),
+      severity: z.enum(['error', 'warning']).optional()
+    })).optional()
+  })).optional(),
+  sdiSubmissionDate: z.string().optional(),
+  sdiLastCheck: z.string().optional(),
+  uploadFilename: z.string().optional(), // Aruba upload filename
 });
 
 // Schema per impostazioni studio
